@@ -8,7 +8,7 @@
 <meta property="og:title" content="Browser Extension Control — A Default-Deny Reference Implementation">
 <meta property="og:description" content="Passive discovery, risk enrichment, and Group Policy allowlist enforcement on Chrome and Edge. A practical reference implementation.">
 <meta property="og:type" content="article">
-<meta property="og:image" content="assets/cover.png">
+<meta property="og:image" content="assets/cover-neobrutal.png">
 <meta name="author" content="David Idemudia Odige, Godwin Enendu">
 <link rel="canonical" href="https://odigiedavididemudia.github.io/browser-extension-control/">
 <script type="application/ld+json">
@@ -18,7 +18,7 @@
   "headline": "Browser Extension Control — A Default-Deny Reference Implementation",
   "description": "A practical reference for governing browser extensions on managed Chromium estates: passive discovery, risk enrichment, and Group Policy allowlist enforcement on Chrome and Edge.",
   "url": "https://odigiedavididemudia.github.io/browser-extension-control/",
-  "image": "https://odigiedavididemudia.github.io/browser-extension-control/assets/cover.png",
+  "image": "https://odigiedavididemudia.github.io/browser-extension-control/assets/cover-neobrutal.png",
   "inLanguage": "en",
   "datePublished": "2026-10-12",
   "dateModified": "2026-10-12",
@@ -431,7 +431,7 @@ footer p { margin: 0; max-width: 34rem; }
 
 <header class="hero max">
   <div class="hero-frame">
-    <img src="assets/cover.png" alt="Unapproved browser extensions deflected by a security barrier while a small approved set passes through a single gate.">
+    <img src="assets/cover-neobrutal.png" alt="Unapproved browser extensions bounce off a heavy barrier while a small approved set passes through a single gate in an armoured vault door.">
   </div>
   <div class="title-block">
     <span class="eyebrow">Reference implementation</span>
@@ -519,7 +519,7 @@ footer p { margin: 0; max-width: 34rem; }
       <p>The consequential choice is to stop treating this as a blocklist problem. A blocklist only knows about threats that have already been observed and catalogued. An <strong>allowlist</strong> denies by default — nothing installs unless it has been explicitly reviewed and approved. New, unknown, and newly-compromised extensions are then blocked <em>by design</em> rather than by luck.</p>
 
       <figure>
-        <img src="assets/allowlist-diagram.png" alt="Three-stage diagram: unknown extensions are discovered, enriched to resolve each one to an identifiable item, then passed through a single default-deny checkpoint gate.">
+        <img src="assets/pipeline-neobrutal.png" alt="Three-stage diagram: unknown extensions are discovered, enriched to resolve each one to an identifiable item, then passed through a single default-deny checkpoint gate.">
         <figcaption>The three-stage model. Sections 3, 4 and 5 address each stage in turn — discovery, enrichment, and enforcement at the gate.</figcaption>
       </figure>
     </section>
@@ -580,6 +580,23 @@ footer p { margin: 0; max-width: 34rem; }
         <strong>Budget your time here</strong>
         <p>The enrichment step is mechanical and largely automatable. The <em>review</em> is the work, and it is where analyst judgement actually determines whether the allowlist is defensible. Tooling will not make this decision for you.</p>
       </div>
+
+      <h3>Reference implementation — ExtSafe</h3>
+      <p>The enrichment layer is the part most likely to be skipped, because it looks like it can be done by hand "when someone gets time". It cannot. A few hundred identifiers is already beyond what manual research sustains.</p>
+      <p>To avoid that failure mode we built the stage into a small open-source tool, <strong><a href="https://github.com/OdigieDavidIdemudia/ExtSafe" rel="noopener" target="_blank">ExtSafe</a></strong> — a browser extension safety auditor. It is MIT licensed and has no third-party dependencies to procure.</p>
+      <p>It does the mechanical half of Layer 2 and nothing more:</p>
+      <ul>
+        <li>Accepts a list of extension identifiers — individually or in bulk</li>
+        <li>Resolves each one against public marketplace metadata</li>
+        <li>Returns a consolidated results view: name, description, risk rating, source URL, and marketplace resolution status per identifier</li>
+        <li>Exports the full result set to Excel so reviewers can sort, filter and annotate offline</li>
+      </ul>
+      <p>Two deliberate omissions. It does not make the approve/reject decision — that is the analyst's, and the whole value of the exercise depends on a human making it. And it does not push anything to endpoints; it produces evidence for a decision, not the control itself. Enforcement remains Layer 3.</p>
+
+      <div class="note note--warn">
+        <strong>Why the export matters</strong>
+        <p>Review is done by people in conversation with the teams who requested each tool. A spreadsheet is the artefact that survives that conversation. A dashboard nobody exports from is a dashboard nobody annotates.</p>
+      </div>
     </section>
 
     <section id="enforcement">
@@ -608,6 +625,11 @@ footer p { margin: 0; max-width: 34rem; }
         <strong>Restricting is not mandating</strong>
         <p><code>ExtensionInstallAllowlist</code> restricts what users may add. If the objective additionally includes <em>mandating</em> specific extensions centrally, that is a distinct setting — <code>ExtensionInstallForcelist</code> — and carries its own change-management implications. Treating them as one control is a common and costly mistake.</p>
       </div>
+
+      <figure>
+        <img src="assets/quantity-vs-allowlist.png" alt="A dense chaotic swarm of grey tiles divided by a heavy rule from just three neat approved tiles marked with checkmarks and a padlock.">
+        <figcaption>The outcome of an allowlist: a large discovered estate reduced to a short, defensible set of approved identifiers. Everything to the left of the rule is no longer installable.</figcaption>
+      </figure>
     </section>
 
     <section id="validation">
@@ -655,6 +677,7 @@ footer p { margin: 0; max-width: 34rem; }
         <li><strong>Force-install is not covered.</strong> Mandating extensions centrally is out of scope.</li>
         <li><strong>Point-in-time discovery.</strong> File telemetry reflects current disk state, not historical installs.</li>
         <li><strong>Risk indicators are heuristics.</strong> Enrichment produces signals for human review, not an automated verdict. An extension flagged low-risk is not thereby safe.</li>
+        <li><strong>ExtSafe is enrichment only.</strong> It resolves and presents metadata. It does not decide, approve, or enforce — see sections 4 and 5.</li>
       </ul>
 
       <hr class="rule">

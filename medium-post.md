@@ -1,4 +1,4 @@
-# MEDIUM POST — READY TO PASTE
+mak# MEDIUM POST — READY TO PASTE
 
 Paste the body below into Medium's editor (Medium converts Markdown on paste).
 Set the metadata from the tables after the rule.
@@ -38,9 +38,29 @@ No subtitle is also fine — Medium generates a card preview from your first ima
 Use the generated hero so the Medium card renders correctly (Medium will otherwise pick a
 random frame or show a blank card):
 
-`https://odigiedavididemudia.github.io/browser-extension-control/assets/cover.png`
+`https://odigiedavididemudia.github.io/browser-extension-control/assets/cover-neobrutal.png`
 
 Paste it as the first element. Medium uses the first image as the card preview.
+
+### Image placement
+
+| # | Image | Where | Why |
+|---|-------|-------|-----|
+| 1 | `cover-neobrutal.png` | **First element of the body** | Doubles as the Medium card preview. Vault door, tiles bouncing off the indigo barrier, three approved tiles through the gate. Left third is deliberately empty — that's where Medium overlays the title on the card. |
+| 2 | `quantity-vs-allowlist.png` | After "Three layers, none of them a product" | Carries the 412 → few-dozen argument visually. The chaos/three-tiles split does the arguing for you. |
+| 3 | `pipeline-neobrutal.png` | Not in the Medium post | Used on the GitHub Pages reference instead — it's the section map for a documentation page, redundant in a narrative piece. |
+
+Paste images as standalone blocks on their own line, with a blank line before and after.
+Medium sets its own width; don't resize manually.
+
+**Design note:** all three are neobrutalist — 4px black outlines, flat fills, hard offset
+shadows, indigo `#4F46E5` as the single accent on off-white. That matches the design system
+the reference page uses. None contain any text, because generated typography comes out
+garbled and Medium lets you set real type over the top anyway.
+
+Direct URLs if you prefer hotlinking:
+- Cover — `https://odigiedavididemudia.github.io/browser-extension-control/assets/cover-neobrutal.png`
+- Quantity — `https://odigiedavididemudia.github.io/browser-extension-control/assets/quantity-vs-allowlist.png`
 
 ---
 
@@ -121,6 +141,18 @@ An identifier like `nkbihfbeogaeaoehlefnkodbefgpgknn` tells you absolutely nothi
 whether to trust it. We resolved every single one against public extension intelligence to
 attach a name, a description, a publisher, and a risk signal, then had humans sort them into
 approve, reject, or *pending*.
+
+That middle stage was the one I expected to skip, because it looks like something you can
+do by hand when someone finds time. You cannot. A few hundred identifiers is already well
+past what manual research sustains, and the moment you let it slide you end up approving
+whatever nobody got round to looking at. So we built the boring half into a small tool —
+[ExtSafe](https://github.com/OdigieDavidIdemudia/ExtSafe), open source, MIT — that takes the
+identifier list, resolves each entry, and hands back a spreadsheet with name, description,
+risk rating, source link and resolution status for each one.
+
+What it deliberately does not do is decide. It produces evidence. The approve/reject call is
+still a person talking to the person who asked for the tool, and that conversation is the
+entire point.
 
 That third bucket mattered more than I expected. It gave us somewhere to put things that
 weren't ready for a decision yet. Without it, every ambiguous request had to be silently
