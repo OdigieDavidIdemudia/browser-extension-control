@@ -2,7 +2,7 @@
 
 A practical reference for governing browser extensions across a managed Chromium estate.
 
-Passive discovery, risk enrichment, and default-deny enforcement on Chrome and Edge via
+Passive discovery, risk enrichment, and default-deny enforcement on Chromium-based browsers via
 Active Directory Group Policy. No third-party browser management tooling required.
 
 **Live:** https://odigiedavididemudia.github.io/browser-extension-control/

@@ -90,9 +90,11 @@
   --warn: #B45309;
 }
 
+/* Dark tokens are declared once and applied by either signal: the OS preferring dark
+   (unless the user has explicitly chosen light), or an explicit data-theme="dark".
+   This lets a manual override beat the system preference in both directions. */
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* --- colorSystem.dark + accent lightened for AA on dark --- */
+  :root:not([data-theme="light"]) {
     --bg: #141414;
     --surface: #1E1E1E;
     --raised: #242424;
@@ -103,6 +105,19 @@
     --warn: #F0B429;
   }
 }
+:root[data-theme="dark"] {
+  --bg: #141414;
+  --surface: #1E1E1E;
+  --raised: #242424;
+  --fg: #FAFAFA;
+  --fg-2: #9A9A9A;
+  --line: #2E2E2E;
+  --accent: #8B86F5;
+  --warn: #F0B429;
+}
+/* keep native UI (scrollbars, form controls) in step with the active mode */
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
 
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -390,6 +405,31 @@ footer p { margin: 0; max-width: 34rem; }
 }
 .author-chip:hover { background: var(--surface); }
 
+/* theme toggle */
+.title-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--md); flex-wrap: wrap;
+}
+.theme-toggle {
+  font-family: "JetBrains Mono", monospace;
+  font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  display: inline-flex; align-items: center; gap: var(--xs);
+  min-height: 44px; /* accessibility: minTouchTarget */
+  padding: 0 var(--md);
+  background: transparent;
+  color: var(--fg);
+  border: var(--bw) solid var(--fg);
+  border-radius: var(--br);
+  cursor: pointer;
+  transition: transform var(--d-fast) var(--ease-standard),
+              box-shadow var(--d-fast) var(--ease-standard),
+              background var(--d-fast) var(--ease-standard);
+}
+.theme-toggle:hover { background: var(--surface); transform: translate(2px, 2px); }
+.theme-toggle:active { transform: translate(3px, 3px); }
+.theme-toggle .glyph { font-size: var(--t-base); line-height: 1; }
+
 /* ---------- responsive ---------- */
 @media (max-width: 1023px) {
   .hero { padding-top: var(--2xl); }
@@ -425,6 +465,16 @@ footer p { margin: 0; max-width: 34rem; }
   * { transition: none !important; }
 }
 </style>
+<script>
+  /* Apply the stored theme before first paint so switching modes never flashes
+     the wrong background. Kept tiny and inline for that reason. */
+  (function () {
+    try {
+      var t = localStorage.getItem('bec-theme');
+      if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    } catch (e) {}
+  })();
+</script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -434,14 +484,19 @@ footer p { margin: 0; max-width: 34rem; }
     <img src="assets/cover-neobrutal.png" alt="Unapproved browser extensions bounce off a heavy barrier while a small approved set passes through a single gate in an armoured vault door.">
   </div>
   <div class="title-block">
-    <span class="eyebrow">Reference implementation</span>
+    <div class="title-head">
+      <span class="eyebrow">Reference implementation</span>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch colour theme">
+        <span class="glyph" aria-hidden="true">◐</span><span class="label">Theme</span>
+      </button>
+    </div>
     <h1>Browser Extension Control</h1>
     <p class="dek">Governing browser extensions across a managed Chromium estate — passive discovery, risk enrichment, and default-deny enforcement on Chrome and Edge.</p>
     <div class="tags">
       <span class="tag tag--accent">default-deny</span>
       <span class="tag">no new tooling</span>
       <span class="tag">active directory</span>
-      <span class="tag">chrome + edge</span>
+      <span class="tag">browsers</span>
     </div>
     <div class="byline">
       <p class="byline-label">Written by</p>
@@ -699,4 +754,44 @@ footer p { margin: 0; max-width: 34rem; }
 </footer>
 
 </body>
+<script>
+  /* Theme toggle. Defaults to the OS preference; an explicit choice is persisted
+     and takes precedence over the system in both directions. */
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('theme-toggle');
+    if (!btn) return;
+    var label = btn.querySelector('.label');
+    var KEY = 'bec-theme';
+
+    function systemDark() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    function current() {
+      return root.getAttribute('data-theme') || (systemDark() ? 'dark' : 'light');
+    }
+    function render() {
+      var mode = current();
+      btn.setAttribute('aria-label', 'Switch to ' + (mode === 'dark' ? 'light' : 'dark') + ' mode');
+      if (label) label.textContent = mode === 'dark' ? 'Light' : 'Dark';
+    }
+    function set(mode) {
+      root.setAttribute('data-theme', mode);
+      try { localStorage.setItem(KEY, mode); } catch (e) {}
+      render();
+    }
+
+    btn.addEventListener('click', function () {
+      set(current() === 'dark' ? 'light' : 'dark');
+    });
+
+    /* Follow OS changes only while no explicit choice has been made. */
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    var onChange = function () { if (!root.getAttribute('data-theme')) render(); };
+    if (mq.addEventListener) mq.addEventListener('change', onChange);
+    else if (mq.addListener) mq.addListener(onChange);
+
+    render();
+  })();
+</script>
 </html>
