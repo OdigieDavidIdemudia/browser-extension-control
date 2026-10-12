@@ -9,6 +9,33 @@
 <meta property="og:description" content="Passive discovery, risk enrichment, and Group Policy allowlist enforcement on Chrome and Edge. A practical reference implementation.">
 <meta property="og:type" content="article">
 <meta property="og:image" content="assets/cover.png">
+<meta name="author" content="David Idemudia Odige, Godwin Enendu">
+<link rel="canonical" href="https://odigiedavididemudia.github.io/browser-extension-control/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "headline": "Browser Extension Control — A Default-Deny Reference Implementation",
+  "description": "A practical reference for governing browser extensions on managed Chromium estates: passive discovery, risk enrichment, and Group Policy allowlist enforcement on Chrome and Edge.",
+  "url": "https://odigiedavididemudia.github.io/browser-extension-control/",
+  "image": "https://odigiedavididemudia.github.io/browser-extension-control/assets/cover.png",
+  "inLanguage": "en",
+  "datePublished": "2026-10-12",
+  "dateModified": "2026-10-12",
+  "keywords": "browser extensions, default-deny, allowlist, group policy, Chrome, Edge, Active Directory, security",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "David Idemudia Odige",
+      "url": "https://github.com/OdigieDavidIdemudia"
+    },
+    {
+      "@type": "Person",
+      "name": "Godwin Enendu"
+    }
+  ]
+}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -209,6 +236,30 @@ a:hover { text-decoration-thickness: 2px; }
 }
 .toc a:hover { color: var(--fg); }
 
+/* mobile TOC: collapsible so it never pushes the article below the fold */
+.toc-m { border-top: var(--bw) solid var(--fg); margin-bottom: var(--lg); }
+.toc-m > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sm);
+  font-family: "JetBrains Mono", monospace;
+  font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-2);
+  /* accessibility: minTouchTarget 44px */
+  min-height: 44px;
+  padding: var(--xs) 0;
+}
+.toc-m > summary::-webkit-details-marker { display: none; }
+.toc-m > summary::after { content: "+"; font-size: var(--t-lg); color: var(--accent); line-height: 1; }
+.toc-m[open] > summary::after { content: "\2212"; }
+.toc-m[open] > summary { border-bottom: 1px solid var(--line); }
+.toc-m .toc { border-top: 0; padding-top: var(--xs); }
+.toc-m .toc a { padding: var(--sm) 0; min-height: 44px; }
+@media (min-width: 1024px) { .toc-m { display: none; } }
+@media (max-width: 1023px) { .toc-desktop { display: none; } }
+
 .prose { max-width: var(--prose); }
 
 /* ---------- sections ---------- */
@@ -248,7 +299,8 @@ code {
   background: var(--surface);
   padding: .1em .35em;
   border-radius: 3px;
-  white-space: nowrap;
+  /* must wrap on narrow viewports — identifiers and paths have no spaces */
+  overflow-wrap: anywhere;
 }
 pre {
   background: var(--surface);
@@ -297,6 +349,70 @@ footer {
 footer .max { display: flex; flex-wrap: wrap; gap: var(--md); align-items: center; justify-content: space-between; }
 footer p { margin: 0; max-width: 34rem; }
 
+/* ---------- authorship ---------- */
+.byline {
+  margin-top: var(--xl);
+  padding-top: var(--md);
+  border-top: 1px solid var(--line);
+  max-width: var(--prose);
+}
+.byline-label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-2);
+  margin-bottom: var(--xs);
+}
+.byline-names {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: var(--t-base); font-weight: 500;
+  margin: 0;
+}
+.byline-names a { color: var(--fg); text-decoration-color: var(--accent); }
+.authors { display: flex; flex-wrap: wrap; gap: var(--xs); margin-top: var(--sm); }
+.author-chip {
+  font-family: "JetBrains Mono", monospace;
+  font-size: var(--t-xs); font-weight: 700;
+  padding: var(--xxs) var(--sm);
+  border: var(--bw) solid var(--fg);
+  border-radius: var(--br);
+  text-decoration: none;
+  color: var(--fg);
+  display: inline-flex; align-items: center; min-height: 32px;
+}
+.author-chip:hover { background: var(--surface); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1023px) {
+  .hero { padding-top: var(--2xl); }
+  .prose { max-width: 100%; }
+  h3 { margin-top: var(--xl); }
+  figure { margin: var(--xl) 0; }
+  .dek { font-size: var(--t-base); }
+}
+@media (max-width: 767px) {
+  .hero { padding-top: var(--lg); }
+  .hero-frame { box-shadow: 3px 3px 0 var(--fg); }
+  figure img { box-shadow: 3px 3px 0 var(--fg); }
+  .shell { margin-top: var(--2xl); gap: var(--xl); }
+  section { margin-bottom: var(--2xl); }
+  section + section { padding-top: var(--2xl); }
+  .rule { margin: var(--2xl) 0; }
+  p, ul, ol { margin-bottom: var(--md); }
+  pre { padding: var(--sm) var(--md); }
+  th, td { padding: var(--sm) var(--sm) var(--sm) 0; }
+  .note { padding-left: var(--md); }
+  .dek { max-width: 100%; }
+  .tags { margin-top: var(--lg); }
+  footer .max { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 479px) {
+  .tag { font-size: 11.5px; padding: 3px var(--xs); }
+  .dek { font-size: var(--t-sm); }
+  .authors { gap: var(--xxs); }
+  .author-chip { font-size: 11.5px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
@@ -319,11 +435,18 @@ footer p { margin: 0; max-width: 34rem; }
       <span class="tag">active directory</span>
       <span class="tag">chrome + edge</span>
     </div>
+    <div class="byline">
+      <p class="byline-label">Written by</p>
+      <p class="byline-names">David Idemudia Odige &amp; Godwin Enendu</p>
+      <div class="authors">
+        <a class="author-chip" href="https://github.com/OdigieDavidIdemudia" rel="author noopener" target="_blank">@OdigieDavidIdemudia</a>
+      </div>
+    </div>
   </div>
 </header>
 
 <div class="shell">
-  <nav class="toc" aria-label="Contents">
+  <nav class="toc toc-desktop" aria-label="Contents">
     <h2>Contents</h2>
     <ol>
       <li><a href="#problem">The problem</a></li>
@@ -338,6 +461,22 @@ footer p { margin: 0; max-width: 34rem; }
   </nav>
 
   <main class="prose" id="main">
+
+    <details class="toc-m">
+      <summary>Contents</summary>
+      <nav class="toc" aria-label="Contents">
+        <ol>
+          <li><a href="#problem">The problem</a></li>
+          <li><a href="#decision">Default-deny</a></li>
+          <li><a href="#discovery">Discovery</a></li>
+          <li><a href="#enrichment">Risk enrichment</a></li>
+          <li><a href="#enforcement">Enforcement</a></li>
+          <li><a href="#validation">Validation</a></li>
+          <li><a href="#operations">Operations</a></li>
+          <li><a href="#limits">Limitations</a></li>
+        </ol>
+      </nav>
+    </details>
 
     <section id="problem">
       <span class="sec-num">01</span>
@@ -518,7 +657,7 @@ footer p { margin: 0; max-width: 34rem; }
 <footer>
   <div class="max">
     <p>Reference implementation, published for reuse. No environment-specific identifiers, queries, policy paths, organisation names, or personnel are included.</p>
-    <span class="tag">neobrutal × minimal</span>
+    <p>Written by <strong>David Idemudia Odige</strong> &amp; <strong>Godwin Enendu</strong></p>
   </div>
 </footer>
 
