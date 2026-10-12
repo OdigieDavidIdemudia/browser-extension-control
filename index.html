@@ -9,305 +9,518 @@
 <meta property="og:description" content="Passive discovery, risk enrichment, and Group Policy allowlist enforcement on Chrome and Edge. A practical reference implementation.">
 <meta property="og:type" content="article">
 <meta property="og:image" content="assets/cover.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128274;</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23141414'/><rect x='26' y='36' width='48' height='34' fill='none' stroke='%234F46E5' stroke-width='8'/><rect x='41' y='53' width='18' height='17' fill='%234F46E5'/></svg>">
 <style>
+/* ==========================================================================
+   Design system: personal-design-standard-v1
+   Variant: neobrutalism structure × minimalism restraint
+   Type pairing: technicalMono (Space Grotesk / Inter / JetBrains Mono)
+
+   Discipline applied:
+   - hard borders + visible structure: kept (neobrutalism)
+   - hard offset shadow: ONLY on hero + figures (2 elements, both earned)
+   - background texture, filled badges, boxy containers: removed (minimalism)
+   - accent: section numerals, links, focus, one rule. Nothing else.
+   ========================================================================== */
+
+:root {
+  /* --- spacingScale: base 4 --- */
+  --xxs: 4px; --xs: 8px; --sm: 12px; --md: 16px; --lg: 24px;
+  --xl: 32px; --2xl: 48px; --3xl: 64px; --4xl: 96px;
+
+  /* --- typography.scale: ratio 1.25, base 16 --- */
+  --t-xs: 12.8px; --t-sm: 14.4px; --t-base: 16px; --t-lg: 20px;
+  --t-xl: 25px; --t-2xl: 31px; --t-3xl: 39px; --t-4xl: 49px;
+  --lh-tight: 1.15; --lh-body: 1.6; --lh-relaxed: 1.75;
+
+  /* --- motion --- */
+  --d-fast: 150ms; --d-base: 220ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* --- neobrutalism: 2-3px solid border, 4-6px radius, hard offset shadow --- */
+  --bw: 2px;
+  --bw-lg: 3px;
+  --br: 4px;
+  --shadow-hard: 5px 5px 0 var(--fg);
+
+  /* --- grid --- */
+  --maxw: 1200px;
+  --gutter: 24px;
+  --prose: 46rem;
+
+  /* --- colorSystem.light --- */
+  --bg: #FAFAFA;
+  --surface: #F1F1F1;
+  --raised: #FFFFFF;
+  --fg: #141414;
+  --fg-2: #656565;
+  --line: #E4E4E4;
+  --accent: #4F46E5;
+  --warn: #B45309;
+}
+
+@media (prefers-color-scheme: dark) {
   :root {
-    --bg: #ffffff;
-    --fg: #1a1d24;
-    --muted: #5b6472;
-    --line: #e3e7ed;
-    --accent: #0f6e8c;
-    --code-bg: #f5f7fa;
-    --warn-bg: #fff8e6;
-    --warn-line: #f0d9a0;
-    --page: 64rem;
-    --wide: 54rem;
-    --measure: 44rem;
+    /* --- colorSystem.dark + accent lightened for AA on dark --- */
+    --bg: #141414;
+    --surface: #1E1E1E;
+    --raised: #242424;
+    --fg: #FAFAFA;
+    --fg-2: #9A9A9A;
+    --line: #2E2E2E;
+    --accent: #8B86F5;
+    --warn: #F0B429;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #14171c;
-      --fg: #e6e9ee;
-      --muted: #9aa4b2;
-      --line: #2a2f38;
-      --accent: #6fc3d8;
-      --code-bg: #1c2027;
-      --warn-bg: #2a2415;
-      --warn-line: #5a4a20;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--fg);
-    font: 16px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-  .wrap { max-width: var(--page); margin: 0 auto; padding: 0 1.25rem 6rem; }
-  header.hero { max-width: var(--page); margin: 0 auto; padding: 0 1.25rem; }
-  header.hero img { width: 100%; height: auto; display: block; border-radius: 10px; margin: 2.5rem 0 0; }
-  /* Prose stays at a comfortable reading width; tables, code and figures use the full page. */
-  .wrap > h1, .wrap > h2, .wrap > h3, .wrap > p, .wrap > ul, .wrap > ol,
-  .wrap > hr, .dek, .meta, .toc, .note, footer { max-width: var(--measure); }
-  .wrap > table, .wrap > pre, .wrap > figure { max-width: var(--wide); }
-  figure.wide, .wrap > figure.wide { max-width: var(--page); }
-  @media (max-width: 44rem) {
-    .wrap > table, .wrap > pre, .wrap > figure { max-width: 100%; }
-  }
-  h1 { font-size: clamp(1.9rem, 5vw, 2.9rem); line-height: 1.15; letter-spacing: -0.02em; margin: 3rem 0 .5rem; }
-  .dek { font-size: 1.12rem; color: var(--muted); margin: 0 0 1.5rem; }
-  .meta { font-size: .82rem; color: var(--muted); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: .7rem 0; margin: 1.5rem 0 2.5rem; }
-  h2 { font-size: 1.42rem; letter-spacing: -0.01em; margin: 3rem 0 .6rem; padding-top: .4rem; }
-  h3 { font-size: 1.06rem; margin: 2rem 0 .4rem; }
-  p, ul, ol { margin: 0 0 1.05rem; }
-  li { margin-bottom: .4rem; }
-  a { color: var(--accent); }
-  code { background: var(--code-bg); padding: .12em .38em; border-radius: 4px; font-size: .88em; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: .9rem 1rem; overflow-x: auto; font-size: .84rem; line-height: 1.5; }
-  pre code { background: none; padding: 0; }
-  table { width: 100%; border-collapse: collapse; margin: 0 0 1.3rem; font-size: .93rem; }
-  th, td { text-align: left; padding: .55rem .6rem; border-bottom: 1px solid var(--line); vertical-align: top; }
-  th { font-weight: 600; font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-  figure { margin: 2rem 0; }
-  figure img { width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); display: block; }
-  figcaption { font-size: .84rem; color: var(--muted); margin-top: .55rem; }
-  .note { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 8px; padding: .9rem 1.1rem; margin: 1.6rem 0; font-size: .93rem; }
-  .note strong { display: block; margin-bottom: .25rem; }
-  .rule { border: 0; border-top: 1px solid var(--line); margin: 3.5rem 0 2rem; }
-  .toc { background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px; padding: 1.1rem 1.3rem; margin: 0 0 2.5rem; font-size: .92rem; }
-  .toc b { display: block; margin-bottom: .4rem; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-  .toc ol { margin: 0; padding-left: 1.15rem; }
-  .toc li { margin-bottom: .2rem; }
-  footer { color: var(--muted); font-size: .85rem; margin-top: 4rem; border-top: 1px solid var(--line); padding-top: 1.2rem; }
-  .skip { position: absolute; left: -9999px; }
-  .skip:focus { left: 1rem; top: 1rem; background: var(--bg); padding: .6rem .9rem; border: 1px solid var(--accent); border-radius: 6px; z-index: 10; }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: var(--t-base);
+  line-height: var(--lh-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- type: the primary hierarchy ---------- */
+h1, h2, h3 {
+  font-family: "Space Grotesk", Inter, sans-serif;
+  font-weight: 700;
+  line-height: var(--lh-tight);
+  letter-spacing: -0.025em;
+  margin: 0 0 var(--md);
+}
+h1 { font-size: clamp(2.2rem, 6vw, var(--t-4xl)); }
+h2 { font-size: clamp(1.55rem, 3.4vw, var(--t-2xl)); }
+h3 {
+  font-size: var(--t-lg);
+  margin-top: var(--2xl);
+  letter-spacing: -0.015em;
+}
+p, ul, ol { margin: 0 0 var(--lg); }
+ul, ol { padding-left: 1.3em; }
+li { margin-bottom: var(--xs); }
+li::marker { color: var(--fg-2); }
+strong { font-weight: 600; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.skip {
+  position: absolute; left: -9999px; top: 0;
+  background: var(--raised); color: var(--fg);
+  padding: var(--sm) var(--md); border: var(--bw-lg) solid var(--fg);
+  font-weight: 600; z-index: 100;
+}
+.skip:focus { left: var(--md); top: var(--md); }
+
+/* ---------- layout ---------- */
+.max { max-width: var(--maxw); margin-inline: auto; padding-inline: var(--gutter); }
+
+/* hero — hard shadow earned by scale */
+.hero { padding-top: var(--3xl); }
+.hero-frame {
+  border: var(--bw-lg) solid var(--fg);
+  border-radius: var(--br);
+  box-shadow: var(--shadow-hard);
+  background: var(--raised);
+  overflow: hidden;
+  transition: transform var(--d-fast) var(--ease-standard),
+              box-shadow var(--d-fast) var(--ease-standard);
+}
+.hero-frame:hover { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--fg); }
+.hero-frame img { display: block; width: 100%; height: auto; }
+
+.title-block { margin-top: var(--2xl); }
+
+/* eyebrow: minimal rule + mono label, no filled badge */
+.eyebrow {
+  display: inline-flex; align-items: center; gap: var(--xs);
+  font-family: "JetBrains Mono", monospace;
+  font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-2);
+  margin-bottom: var(--md);
+}
+.eyebrow::before { content: ""; width: 32px; height: 3px; background: var(--accent); }
+
+.dek {
+  font-size: var(--t-lg);
+  color: var(--fg-2);
+  margin: var(--lg) 0 0;
+  max-width: 40rem;
+  line-height: var(--lh-relaxed);
+}
+
+/* tags: blocky outline, flat, no shadow, one accent */
+.tags { display: flex; flex-wrap: wrap; gap: var(--xs); margin-top: var(--xl); }
+.tag {
+  font-family: "JetBrains Mono", monospace;
+  font-size: var(--t-xs); font-weight: 700;
+  padding: var(--xxs) var(--sm);
+  border: var(--bw) solid var(--fg);
+  border-radius: var(--br);
+  background: transparent;
+}
+.tag--accent { color: var(--accent); border-color: var(--accent); }
+
+/* ---------- shell: TOC rail + prose ---------- */
+.shell {
+  max-width: var(--maxw);
+  margin: var(--4xl) auto 0;
+  padding-inline: var(--gutter);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--2xl);
+  align-items: start;
+}
+@media (min-width: 1024px) {
+  .shell { grid-template-columns: 240px minmax(0, 1fr); gap: var(--3xl); }
+}
+
+/* TOC: a rule and a list, not a box */
+.toc { border-top: var(--bw) solid var(--fg); padding-top: var(--md); }
+@media (min-width: 1024px) { .toc { position: sticky; top: var(--xl); } }
+.toc h2 {
+  font-family: "JetBrains Mono", monospace;
+  font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--fg-2); margin: 0 0 var(--sm);
+}
+.toc ol { list-style: none; margin: 0; padding: 0; counter-reset: toc; }
+.toc li { counter-increment: toc; }
+.toc a {
+  display: flex; gap: var(--xs); align-items: baseline;
+  color: var(--fg-2); text-decoration: none;
+  padding: var(--xxs) 0;
+  font-size: var(--t-sm);
+  transition: color var(--d-fast) var(--ease-standard);
+}
+.toc a::before {
+  content: counter(toc, decimal-leading-zero);
+  font-family: "JetBrains Mono", monospace;
+  font-size: var(--t-xs); color: var(--accent); font-weight: 700;
+}
+.toc a:hover { color: var(--fg); }
+
+.prose { max-width: var(--prose); }
+
+/* ---------- sections ---------- */
+section { margin-bottom: var(--3xl); scroll-margin-top: var(--xl); }
+/* divider above each section — structure without boxes */
+section + section { border-top: var(--bw) solid var(--line); padding-top: var(--3xl); }
+.sec-num {
+  font-family: "JetBrains Mono", monospace;
+  font-size: var(--t-sm); font-weight: 700;
+  color: var(--accent);
+  display: block; margin-bottom: var(--xxs);
+}
+.rule { height: var(--bw); background: var(--fg); border: 0; margin: var(--3xl) 0 var(--3xl); }
+
+/* ---------- callouts: left rule, no box, no shadow ---------- */
+.note {
+  border-left: 4px solid var(--accent);
+  padding: var(--xs) 0 var(--xs) var(--lg);
+  margin: var(--xl) 0;
+}
+.note > strong {
+  display: block;
+  font-family: "JetBrains Mono", monospace;
+  font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: var(--xs);
+}
+.note p:last-child { margin-bottom: 0; }
+.note--warn { border-left-color: var(--warn); }
+.note--warn > strong { color: var(--warn); }
+
+/* ---------- code ---------- */
+code {
+  font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  font-size: .875em;
+  background: var(--surface);
+  padding: .1em .35em;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+pre {
+  background: var(--surface);
+  border: var(--bw) solid var(--fg);
+  border-radius: var(--br);
+  padding: var(--md) var(--lg);
+  overflow-x: auto;
+  margin: 0 0 var(--lg);
+}
+pre code { background: none; padding: 0; white-space: pre; font-size: var(--t-sm); }
+
+/* ---------- table: rules, not boxes ---------- */
+.tablewrap { overflow-x: auto; margin-bottom: var(--lg); }
+table { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
+th, td { text-align: left; padding: var(--sm) var(--md) var(--sm) 0; vertical-align: top; }
+th {
+  font-family: "Space Grotesk", sans-serif;
+  font-size: var(--t-xs); font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em;
+  color: var(--fg-2);
+  border-bottom: var(--bw) solid var(--fg);
+  padding-bottom: var(--xs);
+}
+tbody tr { border-bottom: 1px solid var(--line); }
+tbody tr:last-child { border-bottom: 0; }
+
+/* ---------- figure — the second hard shadow ---------- */
+figure { margin: var(--2xl) 0; }
+figure img {
+  display: block; width: 100%; height: auto;
+  border: var(--bw-lg) solid var(--fg);
+  border-radius: var(--br);
+  box-shadow: var(--shadow-hard);
+  background: var(--raised);
+}
+figcaption { font-size: var(--t-sm); color: var(--fg-2); margin-top: var(--md); }
+
+/* ---------- footer ---------- */
+footer {
+  border-top: var(--bw) solid var(--fg);
+  margin-top: var(--4xl);
+  padding: var(--2xl) 0 var(--3xl);
+  font-size: var(--t-sm);
+  color: var(--fg-2);
+}
+footer .max { display: flex; flex-wrap: wrap; gap: var(--md); align-items: center; justify-content: space-between; }
+footer p { margin: 0; max-width: 34rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
 </style>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
-<header class="hero">
-  <img src="assets/cover.png" alt="Unapproved browser extensions deflected by a security barrier while a small approved set passes through a single gate.">
+<header class="hero max">
+  <div class="hero-frame">
+    <img src="assets/cover.png" alt="Unapproved browser extensions deflected by a security barrier while a small approved set passes through a single gate.">
+  </div>
+  <div class="title-block">
+    <span class="eyebrow">Reference implementation</span>
+    <h1>Browser Extension Control</h1>
+    <p class="dek">Governing browser extensions across a managed Chromium estate — passive discovery, risk enrichment, and default-deny enforcement on Chrome and Edge.</p>
+    <div class="tags">
+      <span class="tag tag--accent">default-deny</span>
+      <span class="tag">no new tooling</span>
+      <span class="tag">active directory</span>
+      <span class="tag">chrome + edge</span>
+    </div>
+  </div>
 </header>
 
-<div class="wrap">
-
-  <h1>Browser Extension Control</h1>
-  <p class="dek">A practical reference for governing browser extensions across a managed Chromium estate — passive discovery, risk enrichment, and default-deny enforcement on Chrome and Edge.</p>
-  <p class="meta">Reference implementation · No third-party browser management tooling required · Applies to Active Directory–managed Windows estates</p>
-
-  <nav class="toc">
-    <b>Contents</b>
+<div class="shell">
+  <nav class="toc" aria-label="Contents">
+    <h2>Contents</h2>
     <ol>
       <li><a href="#problem">The problem</a></li>
-      <li><a href="#decision">The design decision: default-deny</a></li>
-      <li><a href="#discovery">Layer 1 — Discovery</a></li>
-      <li><a href="#enrichment">Layer 2 — Risk enrichment</a></li>
-      <li><a href="#enforcement">Layer 3 — Enforcement</a></li>
-      <li><a href="#validation">Validating enforcement</a></li>
-      <li><a href="#operations">Operating it</a></li>
-      <li><a href="#limitations">Limitations &amp; out of scope</a></li>
+      <li><a href="#decision">Default-deny</a></li>
+      <li><a href="#discovery">Discovery</a></li>
+      <li><a href="#enrichment">Risk enrichment</a></li>
+      <li><a href="#enforcement">Enforcement</a></li>
+      <li><a href="#validation">Validation</a></li>
+      <li><a href="#operations">Operations</a></li>
+      <li><a href="#limits">Limitations</a></li>
     </ol>
   </nav>
 
-  <main id="main">
+  <main class="prose" id="main">
 
-    <h2 id="problem">1. The problem</h2>
+    <section id="problem">
+      <span class="sec-num">01</span>
+      <h2>The problem</h2>
+      <p>A browser extension is a small program with extraordinary reach. It can read and rewrite the content of every page the user visits, observe what is typed into login forms, and transmit data to any destination on the internet. It updates itself. It does most of this without a dock icon, a visible process, or an entry in most endpoint logs.</p>
+      <p>That combination — broad permissions, low visibility, silent operation — makes extensions one of the most under-managed categories of software in most environments. The trend has made it worse: the proliferation of browser-based and AI-assisted productivity tooling has driven a large increase in user-initiated installs, the majority of which are entirely legitimate requests.</p>
+      <p>The risk profile of an unvetted extension includes:</p>
+      <ul>
+        <li>Reading or altering content on any site, including internal administrative systems</li>
+        <li>Capturing credentials as they are entered</li>
+        <li>Exfiltrating browsing data to external infrastructure</li>
+        <li>Changing behaviour silently through unattended auto-update</li>
+        <li>Serving as a delivery vehicle for malware — fake AI assistants and crypto wallets are common lures</li>
+      </ul>
+      <p>Not every malicious extension announces itself, and not every reputable extension stays reputable. Publisher reputation decays and ownership changes hands, so any control that only operates at the moment of installation will go stale quietly.</p>
 
-    <p>A browser extension is a small program with extraordinary reach. It can read and rewrite the content of every page the user visits, observe what is typed into login forms, and transmit data to any destination on the internet. It updates itself. It does most of this without a dock icon, a visible process, or an entry in most endpoint logs.</p>
+      <div class="note note--accent">
+        <strong>Scope note</strong>
+        <p>This document describes a general-purpose approach. It contains no environment-specific identifiers, queries, policy paths, or asset names, and is safe to reuse as a reference in any organisation.</p>
+      </div>
+    </section>
 
-    <p>That combination — broad permissions, low visibility, silent operation — makes extensions one of the most under-managed categories of software in most environments. The trend has made it worse: the proliferation of browser-based and AI-assisted productivity tooling has driven a large increase in user-initiated installs, the majority of which are entirely legitimate requests.</p>
+    <section id="decision">
+      <span class="sec-num">02</span>
+      <h2>The design decision: default-deny</h2>
+      <p>The instinct is often to treat extension governance as a productivity-versus-security trade-off. The real problem is narrower: without a control, the decision to install is made by every individual user, in the moment, with no information and no review.</p>
+      <p>The consequential choice is to stop treating this as a blocklist problem. A blocklist only knows about threats that have already been observed and catalogued. An <strong>allowlist</strong> denies by default — nothing installs unless it has been explicitly reviewed and approved. New, unknown, and newly-compromised extensions are then blocked <em>by design</em> rather than by luck.</p>
 
-    <p>The risk profile of an unvetted extension includes:</p>
+      <figure>
+        <img src="assets/allowlist-diagram.png" alt="Three-stage diagram: unknown extensions are discovered, enriched to resolve each one to an identifiable item, then passed through a single default-deny checkpoint gate.">
+        <figcaption>The three-stage model. Sections 3, 4 and 5 address each stage in turn — discovery, enrichment, and enforcement at the gate.</figcaption>
+      </figure>
+    </section>
 
-    <ul>
-      <li>Reading or altering content on any site, including internal administrative systems</li>
-      <li>Capturing credentials as they are entered</li>
-      <li>Exfiltrating browsing data to external infrastructure</li>
-      <li>Changing behaviour silently through unattended auto-update</li>
-      <li>Serving as a delivery vehicle for malware — fake AI assistants and crypto wallets are common lures</li>
-    </ul>
-
-    <p>Not every malicious extension announces itself, and not every reputable extension stays reputable. Publisher reputation decays and ownership changes hands, so any control that only operates at the moment of installation will go stale quietly.</p>
-
-    <div class="note">
-      <strong>Scope note</strong>
-      This document describes a general-purpose approach. It contains no environment-specific identifiers, queries, policy paths, or asset names, and is safe to reuse as a reference in any organisation.
-    </div>
-
-    <h2 id="decision">2. The design decision: default-deny</h2>
-
-    <p>The instinct is often to treat extension governance as a productivity-versus-security trade-off. The real problem is narrower: without a control, the decision to install is made by every individual user, in the moment, with no information and no review.</p>
-
-    <p>The consequential design choice is to stop treating this as a blocklist problem. A blocklist only knows about threats that have already been observed and catalogued. An <strong>allowlist</strong> denies by default — nothing installs unless it has been explicitly reviewed and approved. New, unknown, and newly-compromised extensions are then blocked <em>by design</em> rather than by luck.</p>
-
-    <figure class="wide">
-      <img src="assets/allowlist-diagram.png" alt="Three-stage diagram: unknown extensions are discovered, enriched to resolve each one to an identifiable item, then passed through a single default-deny checkpoint gate.">
-      <figcaption>The three-stage model. Sections 3, 4 and 5 address each stage in turn — discovery, enrichment, and enforcement at the gate.</figcaption>
-    </figure>
-
-    <hr class="rule">
-
-    <h2 id="discovery">3. Layer 1 — Discovery</h2>
-
-    <p>Nothing can be governed until it has been seen. The useful property here is that Chromium-based browsers already store installed extensions on disk in each user profile, which means existing endpoint telemetry can discover them <strong>passively</strong> — no agent deployment, no new licence, no additional collection tooling.</p>
-
-    <p>Extensions live at a predictable location per profile:</p>
-
+    <section id="discovery">
+      <span class="sec-num">03</span>
+      <h2>Layer 1 — Discovery</h2>
+      <p>Nothing can be governed until it has been seen. The useful property is that Chromium-based browsers already store installed extensions on disk in each user profile, which means existing endpoint telemetry can discover them <strong>passively</strong> — no agent deployment, no new licence, no additional collection tooling.</p>
+      <p>Extensions live at a predictable location per profile:</p>
 <pre><code>%USERPROFILE%\AppData\Local\&lt;browser&gt;\User Data\Default\Extensions\&lt;extension-id&gt;\</code></pre>
+      <p>Each installed extension is represented by a stable unique identifier, which doubles as the key used by the policy layer in Layer 3.</p>
 
-    <p>Each installed extension is represented by a stable unique identifier, which doubles as the key used by the policy layer in Layer 3.</p>
+      <h3>Method</h3>
+      <ol>
+        <li>Query existing endpoint file telemetry for activity beneath the <code>Extensions</code> directory path across all managed endpoints.</li>
+        <li>Extract the extension identifier from each observed path using a path-matching pattern.</li>
+        <li>Retain host attribution alongside every identifier so findings can be traced back to specific machines.</li>
+        <li>Deduplicate into a consolidated estate-wide inventory.</li>
+      </ol>
+      <p>Expect noise. Multiple browser profiles, leftover directories from removed profiles, and sideloaded developer builds will all generate duplicates. Deduplicate on the identifier, keep the host list separately.</p>
 
-    <h3>Method</h3>
+      <div class="note note--warn">
+        <strong>Practical note</strong>
+        <p>Discovery via file telemetry finds extensions that are <em>present on disk</em>. It will not find an extension that was installed and then removed, and it will not see extensions installed in a profile belonging to a user who has never synced or signed in. Both gaps are acceptable for allowlist construction, but worth stating explicitly.</p>
+      </div>
+    </section>
 
-    <ol>
-      <li>Query existing endpoint file telemetry for activity beneath the <code>Extensions</code> directory path across all managed endpoints.</li>
-      <li>Extract the extension identifier from each observed path using a path-matching pattern.</li>
-      <li>Retain host attribution alongside every identifier so findings can be traced back to specific machines.</li>
-      <li>Deduplicate into a consolidated estate-wide inventory.</li>
-    </ol>
+    <section id="enrichment">
+      <span class="sec-num">04</span>
+      <h2>Layer 2 — Risk enrichment</h2>
+      <p>A raw list of extension identifiers is not actionable. An identifier such as <code>nkbihfbeogaeaoehlefnkodbefgpgknn</code> carries no information about what an extension does or whether it should be trusted. Every unique identifier discovered in Layer 1 must be resolved to human-readable metadata before any allow/deny decision can be defended.</p>
 
-    <p>Expect noise. Multiple browser profiles, leftover directories from removed profiles, and sideloaded developer builds will all generate duplicates. Deduplicate on the identifier, keep the host list separately.</p>
+      <div class="tablewrap">
+      <table>
+        <thead><tr><th>Field</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Extension ID</td><td>Stable identifier as observed from endpoint telemetry</td></tr>
+          <tr><td>Name</td><td>Published display name — something a reviewer can reason about</td></tr>
+          <tr><td>Description</td><td>Publisher's own statement of the extension's function</td></tr>
+          <tr><td>Risk indicator</td><td>Signal derived from description keyword screening and extension category</td></tr>
+          <tr><td>Marketplace resolution</td><td>Whether the identifier resolves to a public, verifiable listing</td></tr>
+          <tr><td>Source URL</td><td>Link to the public listing, for manual verification during review</td></tr>
+        </tbody>
+      </table>
+      </div>
 
-    <div class="note">
-      <strong>Practical note</strong>
-      Discovery via file telemetry finds extensions that are <em>present on disk</em>. It will not find an extension that was installed and then removed, and it will not see extensions installed in a profile belonging to a user who has never synced or signed in. Both gaps are acceptable for allowlist construction, but worth stating explicitly.
-    </div>
+      <h3>Review and decision</h3>
+      <p>Reviewers sort every item into one of three buckets:</p>
+      <ul>
+        <li><strong>Approved</strong> — legitimate business or productivity tooling with low-risk indicators: password managers, document and PDF utilities, accessibility tooling, and internally-issued security agents such as EDR or DLP browser components.</li>
+        <li><strong>Rejected</strong> — high-risk indicators, no legitimate business justification, unresolved identity, or a category the organisation does not permit.</li>
+        <li><strong>Pending review</strong> — requires follow-up with the requesting team before a decision is made.</li>
+      </ul>
+      <p>The <em>pending review</em> state is more important than it first appears. Without a way to park a decision without silently resolving it in either direction, teams tend to over-block legitimate tooling or to lose confidence in the process altogether.</p>
+      <p>Treat "could not be resolved to any public marketplace listing" as a <strong>risk signal in its own right</strong>, not as a transient data-quality condition to retry. An identifier nobody can account for should not be approved by default because enrichment was inconclusive.</p>
 
-    <h2 id="enrichment">4. Layer 2 — Risk enrichment</h2>
+      <div class="note note--accent">
+        <strong>Budget your time here</strong>
+        <p>The enrichment step is mechanical and largely automatable. The <em>review</em> is the work, and it is where analyst judgement actually determines whether the allowlist is defensible. Tooling will not make this decision for you.</p>
+      </div>
+    </section>
 
-    <p>A raw list of extension identifiers is not actionable. An identifier such as <code>nkbihfbeogaeaoehlefnkodbefgpgknn</code> carries no information about what an extension does or whether it should be trusted. Every unique identifier discovered in Layer 1 must be resolved to human-readable metadata before any allow/deny decision can be defended.</p>
+    <section id="enforcement">
+      <span class="sec-num">05</span>
+      <h2>Layer 3 — Enforcement</h2>
+      <p>Once an approved list exists it has to be enforced centrally. Both Chrome and Edge ship native policy templates — ADMX for policy, ADML for localisation — and both expose an <code>ExtensionInstallAllowlist</code> setting that permits installation of approved identifiers and blocks everything else.</p>
+      <p>Because these are native enterprise policy settings, the resulting control requires no end-user action and no third-party browser management agent.</p>
 
-    <p>Each identifier is submitted to a browser extension intelligence source capable of resolving it to publicly available listing metadata:</p>
+      <h3>Prerequisites</h3>
+      <ul>
+        <li>Access to the Group Policy Management Console and the domain central store</li>
+        <li>Chrome and Edge ADMX/ADML policy templates</li>
+        <li>A reviewed list of approved extension identifiers from Layer 2</li>
+      </ul>
 
-    <table>
-      <thead><tr><th>Field</th><th>Purpose</th></tr></thead>
-      <tbody>
-        <tr><td>Extension ID</td><td>Stable identifier as observed from endpoint telemetry</td></tr>
-        <tr><td>Name</td><td>Published display name — something a reviewer can reason about</td></tr>
-        <tr><td>Description</td><td>Publisher's own statement of the extension's function</td></tr>
-        <tr><td>Risk indicator</td><td>Signal derived from description keyword screening and extension category</td></tr>
-        <tr><td>Marketplace resolution</td><td>Whether the identifier resolves to a public, verifiable listing</td></tr>
-        <tr><td>Source URL</td><td>Link to the public listing, for manual verification during review</td></tr>
-      </tbody>
-    </table>
+      <h3>Procedure</h3>
+      <ol>
+        <li>Copy the ADMX files into the domain SYSVOL policy definitions store, and the ADML files into the appropriate language folder (for example <code>en-US</code>).</li>
+        <li>Confirm the templates appear under both Chrome and Edge in the Group Policy Management Console.</li>
+        <li>Create or select a GPO. For both browsers, set <code>ExtensionInstallAllowlist</code> to <strong>Enabled</strong>.</li>
+        <li>Add one approved extension identifier per line.</li>
+        <li>Link the GPO to the target workstation OUs. Apply filtering for a phased rollout where the estate is large, and avoid linking to server OUs unless genuinely required.</li>
+      </ol>
 
-    <h3>Review and decision</h3>
+      <div class="note note--warn">
+        <strong>Restricting is not mandating</strong>
+        <p><code>ExtensionInstallAllowlist</code> restricts what users may add. If the objective additionally includes <em>mandating</em> specific extensions centrally, that is a distinct setting — <code>ExtensionInstallForcelist</code> — and carries its own change-management implications. Treating them as one control is a common and costly mistake.</p>
+      </div>
+    </section>
 
-    <p>Reviewers sort every item into one of three buckets:</p>
+    <section id="validation">
+      <span class="sec-num">06</span>
+      <h2>Validating enforcement</h2>
+      <p>A control that has not been demonstrated is a hypothesis. Enforcement should be verified on a managed endpoint in both browsers, by attempting to install extensions that are deliberately absent from the allowlist.</p>
 
-    <ul>
-      <li><strong>Approved</strong> — legitimate business or productivity tooling with low-risk indicators: password managers, document and PDF utilities, accessibility tooling, and internally-issued security agents such as EDR or DLP browser components.</li>
-      <li><strong>Rejected</strong> — high-risk indicators, no legitimate business justification, unresolved identity, or a category the organisation does not permit (unmanaged cryptocurrency wallets, generic ad-injection tooling).</li>
-      <li><strong>Pending review</strong> — requires follow-up with the requesting team before a decision is made.</li>
-    </ul>
+      <h3>Procedure</h3>
+      <ol>
+        <li>Force policy refresh (<code>gpupdate /force</code>) and restart the browser.</li>
+        <li>Confirm the policy is present and correctly scoped at <code>chrome://policy</code> or <code>edge://policy</code>.</li>
+        <li>Attempt to install a non-approved extension from each browser's respective store.</li>
+        <li>Confirm the installation is blocked <em>at the point of download</em>, and that the browser attributes the block to administrative policy rather than surfacing a generic error.</li>
+        <li>Confirm approved extensions still install and function correctly.</li>
+      </ol>
 
-    <p>The <em>pending review</em> state is more important than it first appears. Without a way to park a decision without silently resolving it in either direction, teams tend to over-block legitimate tooling or to lose confidence in the process altogether.</p>
+      <h3>What a correct result looks like</h3>
+      <ul>
+        <li>Blocking occurs at installation, so unapproved extension code never executes. This is genuine default-deny, not a warning dialog.</li>
+        <li>Both browsers independently apply their own policy, confirming correct template deployment and GPO linkage.</li>
+        <li>Even widely used, reputable extensions are blocked unless explicitly approved — the clearest possible demonstration that the control is an allowlist and not a reputation filter.</li>
+        <li>The browser surfaces a clear administrative notice naming the extension, giving users immediate feedback.</li>
+      </ul>
+    </section>
 
-    <p>Treat "could not be resolved to any public marketplace listing" as a <strong>risk signal in its own right</strong>, not as a transient data-quality condition to retry. An identifier that no one can account for should not be approved by default because enrichment was inconclusive.</p>
+    <section id="operations">
+      <span class="sec-num">07</span>
+      <h2>Operating it</h2>
+      <p>The technical control is the straightforward half. What determines whether it is still in place and still correct in twelve months is the process around it.</p>
+      <ul>
+        <li><strong>Request path</strong> — users need a known route to request an extension, with business justification attached. Record requester, business need, and reviewing decision.</li>
+        <li><strong>Service level</strong> — without a response-time commitment, teams route around the control rather than through it, and that circumvention will not appear in policy compliance reporting.</li>
+        <li><strong>Re-audit cadence</strong> — quarterly is a reasonable default. Extension risk decays silently, and an allowlist ages at the same rate.</li>
+        <li><strong>Pruning</strong> — allowlists grow without pressure to shrink. An allowlist nobody comprehends is a liability, because nobody can evaluate the next request against it.</li>
+      </ul>
+    </section>
 
-    <div class="note">
-      <strong>Budget your time here</strong>
-      The enrichment step is mechanical and largely automatable. The <em>review</em> is the work, and it is where analyst judgement actually determines whether the allowlist is defensible. Tooling will not make this decision for you.
-    </div>
+    <section id="limits">
+      <span class="sec-num">08</span>
+      <h2>Limitations &amp; out of scope</h2>
+      <ul>
+        <li><strong>Managed estate only.</strong> This depends on Active Directory group policy reaching the device. Unmanaged or BYOD endpoints require a separate control.</li>
+        <li><strong>Users can disable policies.</strong> Chromium allows disabling <code>chrome://policy</code> enforcement on their own device. On a properly locked-down estate this is itself blocked by policy, but it is a distinct control that must exist.</li>
+        <li><strong>Directory-scoped installs.</strong> Administrator-scoped and externally-hosted extensions follow different policy paths and need separate verification.</li>
+        <li><strong>Force-install is not covered.</strong> Mandating extensions centrally is out of scope.</li>
+        <li><strong>Point-in-time discovery.</strong> File telemetry reflects current disk state, not historical installs.</li>
+        <li><strong>Risk indicators are heuristics.</strong> Enrichment produces signals for human review, not an automated verdict. An extension flagged low-risk is not thereby safe.</li>
+      </ul>
 
-    <h2 id="enforcement">5. Layer 3 — Enforcement</h2>
+      <hr class="rule">
 
-    <p>Once an approved list exists it has to be enforced centrally. Both Chrome and Edge ship native policy templates — ADMX for policy, ADML for localisation — and both expose an <code>ExtensionInstallAllowlist</code> setting that permits installation of approved identifiers and blocks everything else.</p>
-
-    <p>Because these are native enterprise policy settings, the resulting control requires no end-user action and no third-party browser management agent.</p>
-
-    <h3>Prerequisites</h3>
-    <ul>
-      <li>Access to the Group Policy Management Console and the domain central store</li>
-      <li>Chrome and Edge ADMX/ADML policy templates</li>
-      <li>A reviewed list of approved extension identifiers from Layer 2</li>
-    </ul>
-
-    <h3>Procedure</h3>
-
-    <ol>
-      <li>Copy the ADMX files into the domain SYSVOL policy definitions store, and the ADML files into the appropriate language folder (for example <code>en-US</code>).</li>
-      <li>Confirm the templates appear under both Chrome and Edge in the Group Policy Management Console.</li>
-      <li>Create or select a GPO. For both browsers, set <code>ExtensionInstallAllowlist</code> to <strong>Enabled</strong>.</li>
-      <li>Add one approved extension identifier per line.</li>
-      <li>Link the GPO to the target workstation OUs. Apply filtering for a phased rollout where the estate is large, and avoid linking to server OUs unless genuinely required.</li>
-    </ol>
-
-    <h3>Distinguishing restriction from mandate</h3>
-
-    <p><code>ExtensionInstallAllowlist</code> restricts what users may add. If the objective additionally includes <em>mandating</em> specific extensions centrally, that is a distinct setting — <code>ExtensionInstallForcelist</code> — and carries its own change-management implications. Treating them as one control is a common and costly mistake.</p>
-
-    <h2 id="validation">6. Validating enforcement</h2>
-
-    <p>A control that has not been demonstrated is a hypothesis. Enforcement should be verified on a managed endpoint in both browsers, by attempting to install extensions that are deliberately absent from the allowlist.</p>
-
-    <h3>Procedure</h3>
-
-    <ol>
-      <li>Force policy refresh (<code>gpupdate /force</code>) and restart the browser.</li>
-      <li>Confirm the policy is present and correctly scoped at <code>chrome://policy</code> or <code>edge://policy</code>.</li>
-      <li>Attempt to install a non-approved extension from each browser's respective store.</li>
-      <li>Confirm the installation is blocked <em>at the point of download</em>, and that the browser attributes the block to administrative policy rather than surfacing a generic error.</li>
-      <li>Confirm approved extensions still install and function correctly.</li>
-    </ol>
-
-    <h3>What a correct result looks like</h3>
-
-    <ul>
-      <li>Blocking occurs at installation, so unapproved extension code never executes. This is genuine default-deny, not a warning dialog.</li>
-      <li>Both browsers independently apply their own policy, confirming correct template deployment and GPO linkage.</li>
-      <li>Even widely used, reputable extensions are blocked unless explicitly approved — the clearest possible demonstration that the control is an allowlist and not a reputation filter.</li>
-      <li>The browser surfaces a clear administrative notice naming the extension, giving users immediate feedback.</li>
-    </ul>
-
-    <div class="note">
-      <strong>Expect this</strong>
-      Users will notice. Someone will attempt to install a tool they have used legitimately for years, be blocked, and raise a ticket. That is the control working as designed — and it is precisely why the change-management process below is not optional.
-    </div>
-
-    <h2 id="operations">7. Operating it</h2>
-
-    <p>The technical control is the straightforward half. What determines whether it is still in place and still correct in twelve months is the process around it.</p>
-
-    <h3>Request path</h3>
-    <p>Users need a known route to request an extension, with business justification attached. Requests should record the requester, the business need, and the reviewing decision.</p>
-
-    <h3>Service level</h3>
-    <p>Without a response-time commitment, teams route around the control rather than through it. A policy that is technically enforced but practically unresponsive will be circumvented, and the circumvention will not be visible in policy compliance reporting.</p>
-
-    <h3>Re-audit cadence</h3>
-    <p>Quarterly is a reasonable default. Extension risk decays silently — a previously reputable publisher may change ownership or be compromised — and an allowlist ages at the same rate.</p>
-
-    <h3>Pruning</h3>
-    <p>Allowlists grow without pressure to shrink. Schedule periodic removal of extensions nobody is using, or you will eventually be maintaining a list you do not understand. An allowlist nobody comprehends is a liability, because nobody can evaluate the next request against it.</p>
-
-    <h2 id="limitations">8. Limitations &amp; out of scope</h2>
-
-    <ul>
-      <li><strong>Native policy, managed estate only.</strong> This approach depends on Active Directory group policy reaching the device. Unmanaged or BYOD endpoints are out of scope and require a separate control.</li>
-      <li><strong>Users can disable policies.</strong> Chromium browsers allow users to disable <code>chrome://policy</code> enforcement on their own device. On a properly managed and locked-down workstation estate this is itself blocked by policy, but it is a distinct control that must exist.</li>
-      <li><strong>Directory-scoped extension installs.</strong> Administrator-scoped and externally-hosted extensions follow different policy paths and need separate verification.</li>
-      <li><strong>Force-install is not covered.</strong> Mandating extensions centrally is out of scope here.</li>
-      <li><strong>Point-in-time discovery.</strong> File telemetry reflects current disk state, not historical installs.</li>
-      <li><strong>Risk indicators are heuristics.</strong> Enrichment produces signals for human review, not an automated verdict. An extension flagged low-risk is not thereby safe.</li>
-    </ul>
-
-    <hr class="rule">
-
-    <h2>Summary</h2>
-
-    <p>The combination that matters is two halves that reinforce each other: a <strong>technical control</strong> that prevents unapproved extensions from being installed at all, and an <strong>operational process</strong> to evaluate and onboard new ones safely when they are genuinely needed.</p>
-
-    <p>Either half alone tends to fail. A policy without a process becomes a helpdesk queue. A process without a policy becomes a document nobody reads.</p>
+      <h2>Summary</h2>
+      <p>The combination that matters is two halves that reinforce each other: a <strong>technical control</strong> that prevents unapproved extensions from being installed at all, and an <strong>operational process</strong> to evaluate and onboard new ones safely when they are genuinely needed.</p>
+      <p>Either half alone tends to fail. A policy without a process becomes a helpdesk queue. A process without a policy becomes a document nobody reads.</p>
+    </section>
 
   </main>
-
-  <footer>
-    <p>Reference implementation, published for reuse. No environment-specific identifiers, queries, policy paths, organisation names, or personnel are included.</p>
-  </footer>
-
 </div>
+
+<footer>
+  <div class="max">
+    <p>Reference implementation, published for reuse. No environment-specific identifiers, queries, policy paths, organisation names, or personnel are included.</p>
+    <span class="tag">neobrutal × minimal</span>
+  </div>
+</footer>
+
 </body>
 </html>
