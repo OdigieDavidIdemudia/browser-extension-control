@@ -31,7 +31,8 @@
     },
     {
       "@type": "Person",
-      "name": "Godwin Enendu"
+      "name": "Godwin Enendu",
+      "url": "https://github.com/enendugodwin"
     }
   ]
 }
@@ -374,6 +375,8 @@ footer p { margin: 0; max-width: 34rem; }
   margin: 0;
 }
 .byline-names a { color: var(--fg); text-decoration-color: var(--accent); }
+.byline-names a:hover { color: var(--accent); }
+.byline-names .amp { color: var(--fg-2); padding: 0 var(--xxs); }
 .authors { display: flex; flex-wrap: wrap; gap: var(--xs); margin-top: var(--sm); }
 .author-chip {
   font-family: "JetBrains Mono", monospace;
@@ -442,9 +445,14 @@ footer p { margin: 0; max-width: 34rem; }
     </div>
     <div class="byline">
       <p class="byline-label">Written by</p>
-      <p class="byline-names">David Idemudia Odige &amp; Godwin Enendu</p>
+      <p class="byline-names">
+        <a href="https://github.com/OdigieDavidIdemudia" rel="author noopener" target="_blank">David Idemudia Odige</a>
+        <span class="amp">&amp;</span>
+        <a href="https://github.com/enendugodwin" rel="author noopener" target="_blank">Godwin Enendu</a>
+      </p>
       <div class="authors">
         <a class="author-chip" href="https://github.com/OdigieDavidIdemudia" rel="author noopener" target="_blank">@OdigieDavidIdemudia</a>
+        <a class="author-chip" href="https://github.com/enendugodwin" rel="author noopener" target="_blank">@enendugodwin</a>
       </div>
     </div>
   </div>
