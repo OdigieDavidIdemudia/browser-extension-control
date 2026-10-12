@@ -203,13 +203,17 @@ a:hover { text-decoration-thickness: 2px; }
   margin: var(--4xl) auto 0;
   padding-inline: var(--gutter);
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--2xl);
   align-items: start;
 }
 @media (min-width: 1024px) {
   .shell { grid-template-columns: 240px minmax(0, 1fr); gap: var(--3xl); }
 }
+/* grid/flex items default to min-width:auto and refuse to shrink below their
+   content, which forces the column wider than the viewport on narrow screens */
+.prose { max-width: var(--prose); min-width: 0; }
+.toc-desktop, .toc-m { min-width: 0; }
 
 /* TOC: a rule and a list, not a box */
 .toc { border-top: var(--bw) solid var(--fg); padding-top: var(--md); }
@@ -235,6 +239,7 @@ a:hover { text-decoration-thickness: 2px; }
   font-size: var(--t-xs); color: var(--accent); font-weight: 700;
 }
 .toc a:hover { color: var(--fg); }
+.toc-desktop, .toc-m { min-width: 0; }
 
 /* mobile TOC: collapsible so it never pushes the article below the fold */
 .toc-m { border-top: var(--bw) solid var(--fg); margin-bottom: var(--lg); }
