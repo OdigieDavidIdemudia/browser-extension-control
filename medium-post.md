@@ -68,9 +68,14 @@ Direct URLs if you prefer hotlinking:
 
 ---
 
+*Written jointly by **David Idemudia Odige** and **Godwin Enendu**, from work we did together
+in our security monitoring and threat intelligence team.*
+
+---
+
 It started with a spreadsheet.
 
-Not an incident, not an alert, not a phishing wave. A colleague pulled a list together because
+Not an incident, not an alert, not a phishing wave. One of us pulled a list together because
 she was curious: how many browser extensions are installed across our estate? She expected a
 few dozen. There were four hundred and twelve distinct ones.
 
@@ -78,7 +83,7 @@ Every single one had been installed by a colleague who was trying to do their jo
 
 ## The thing nobody had asked
 
-Here is the part that kept me up afterwards. Nobody did anything wrong. Not one of those
+Here is the part that kept us up afterwards. Nobody did anything wrong. Not one of those
 four hundred installs was malicious, and almost none of them were careless. They were people
 who needed a PDF reader, a grammar checker, a password manager, a translation tool, and a
 dozen AI helpers that had exploded onto the scene in the last two years. Every one of those
@@ -98,10 +103,10 @@ all.
 
 ## Why we nearly got this wrong
 
-The first proposal I heard was a blocklist. Block the known-bad extensions. Maintain it
-quarterly. Respond to the next bad extension when it shows up.
+The first proposal either of us heard was a blocklist. Block the known-bad extensions.
+Maintain it quarterly. Respond to the next bad extension when it shows up.
 
-That is a bad idea, and it took me a while to explain why to people who wanted it.
+That is a bad idea, and it took us a while to explain why to the people who wanted it.
 
 A blocklist only knows about threats someone has already seen, catalogued, and written down.
 Everything else walks straight through. It does not block the extension that turns malicious
@@ -121,7 +126,7 @@ but because nobody ever approved it.
 
 This is the entire change. Everything else is implementation detail.
 
-The psychological effect surprised me. Once we switched to allowlist, the burden of proof
+The psychological effect surprised us. Once we switched to allowlist, the burden of proof
 inverted. Previously, security had to prove an extension was bad before blocking it, and
 that is a fight you lose slowly, one extension at a time. Afterwards, the default was safe
 and security had to argue for something to be *added*. The queue of exceptions dried up almost
@@ -142,19 +147,19 @@ whether to trust it. We resolved every single one against public extension intel
 attach a name, a description, a publisher, and a risk signal, then had humans sort them into
 approve, reject, or *pending*.
 
-That middle stage was the one I expected to skip, because it looks like something you can
+That middle stage was the one we expected to skip, because it looks like something you can
 do by hand when someone finds time. You cannot. A few hundred identifiers is already well
 past what manual research sustains, and the moment you let it slide you end up approving
-whatever nobody got round to looking at. So we built the boring half into a small tool —
-[ExtSafe](https://github.com/OdigieDavidIdemudia/ExtSafe), open source, MIT — that takes the
-identifier list, resolves each entry, and hands back a spreadsheet with name, description,
-risk rating, source link and resolution status for each one.
+whatever nobody got round to looking at. So between us we built the boring half into a small
+tool — [ExtSafe](https://github.com/OdigieDavidIdemudia/ExtSafe), open source, MIT — that
+takes the identifier list, resolves each entry, and hands back a spreadsheet with name,
+description, risk rating, source link and resolution status for each one.
 
 What it deliberately does not do is decide. It produces evidence. The approve/reject call is
 still a person talking to the person who asked for the tool, and that conversation is the
 entire point.
 
-That third bucket mattered more than I expected. It gave us somewhere to put things that
+That third bucket mattered more than we expected. It gave us somewhere to put things that
 weren't ready for a decision yet. Without it, every ambiguous request had to be silently
 approved or silently denied, and both of those quietly destroyed trust in the process.
 
@@ -166,22 +171,22 @@ the approved IDs, and linked the policy to our workstation OUs.
 Four hundred and twelve extensions. A few dozen made the approved list. The rest stopped
 being installable.
 
-## The moment I knew it worked
+## The moment we knew it worked
 
 Policies that appear correctly in the policy console are not proof of anything. They have
 been seen. So we tested the negative case, deliberately: on a managed endpoint, we tried to
 install extensions that were *not* on the allowlist.
 
-Both browsers refused the install, and — this is the detail I care about — they attributed
+Both browsers refused the install, and — this is the detail we care about — they attributed
 it to administrative policy rather than throwing a generic error. The block happened at the
 point of download, which means the extension code never executed. Not "you can install this
 but it will warn you". It never ran.
 
-The detail that made me happiest: we picked well-known, entirely reputable extensions as
+The detail that made us happiest: we picked well-known, entirely reputable extensions as
 test cases. Google Translate. DeepL. A mainstream password manager. All blocked. Because none
 of them were approved.
 
-That is the allowlist working exactly as designed, and it is also the bit I would warn any
+That is the allowlist working exactly as designed, and it is also the bit we would warn any
 organisation about, below.
 
 ## What nobody warns you about
@@ -203,14 +208,14 @@ If you deploy this, you need three things before the policy goes live, not after
 
 A policy without those is a helpdesk queue with extra steps.
 
-## What I'd do differently
+## What we'd do differently
 
-A few things, now that I've lived with this.
+A few things, now that we've lived with this.
 
-**Re-audit sooner than feels necessary.** Quarterly is the number I'd recommend, and it feels
-too frequent for about two quarters. Extension risk decays quietly — publishers get acquired,
-legitimate projects get abandoned and resold. An allowlist ages the same way, and nothing
-announces that it has gone stale.
+**Re-audit sooner than feels necessary.** Quarterly is the number we'd recommend, and it
+feels too frequent for about two quarters. Extension risk decays quietly — publishers get
+acquired, legitimate projects get abandoned and resold. An allowlist ages the same way, and
+nothing announces that it has gone stale.
 
 **Prune aggressively.** Allowlists only ever grow unless you make them shrink. Ours did. We
 ended up maintaining entries nobody could explain, which is worse than useless: nobody can
@@ -225,7 +230,7 @@ never claimed to cover.
 not just be blocked from others. Those are two different policy settings with different
 change-management consequences, and we initially conflated them. Don't.
 
-## The part I keep coming back to
+## The part we keep coming back to
 
 None of the technology here was difficult. There was no novel attack to defend against, no
 product to evaluate, no budget to find. The Group Policy setting was sitting there, fully
@@ -233,7 +238,8 @@ supported, the entire time.
 
 What took the effort was the unglamorous middle: deciding what was actually approved, agreeing
 who could approve it, and building a process good enough that people used it instead of
-resenting it.
+resenting it. Most of that was arguing with each other about where the line should sit, which
+is what you would expect from two people who did not fully agree at the start.
 
 Four hundred and twelve extensions were installed in our environment before anyone asked.
 If you work somewhere that hasn't asked, the number you get will probably surprise you too.
